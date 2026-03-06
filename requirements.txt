@@ -1,0 +1,9 @@
+docling
+llama-index
+llama-index-vector-stores-chroma
+llama-index-embeddings-ollama
+llama-index-llms-ollama
+chromadb
+ragas
+gradio
+python-dotenv
