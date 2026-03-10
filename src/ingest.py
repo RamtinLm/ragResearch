@@ -2,6 +2,7 @@ import os
 import chromadb
 from dotenv import load_dotenv
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, StorageContext
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
 
@@ -20,9 +21,17 @@ def ingest_documents():
     documents = SimpleDirectoryReader(data_path).load_data()
     print(f"✅ Loaded {len(documents)} document(s)")
 
+    # Chunk documents into smaller pieces
+    splitter = SentenceSplitter(chunk_size=128, chunk_overlap=20)
+    nodes = splitter.get_nodes_from_documents(documents)
+    # Filter out any chunks exceeding safe token limit
+    nodes = [n for n in nodes if len(n.text.split()) <= 300]
+    print(f"✅ Split into {len(nodes)} chunks after filtering")
+
     embed_model = OllamaEmbedding(
         model_name=embed_model_name,
-        base_url=ollama_url
+        base_url=ollama_url,
+        embed_batch_size=1
     )
 
     print("🗄️ Connecting to ChromaDB...")
@@ -31,9 +40,9 @@ def ingest_documents():
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    print("⚙️ Chunking and embedding documents...")
-    index = VectorStoreIndex.from_documents(
-        documents,
+    print("⚙️ Embedding and storing chunks...")
+    index = VectorStoreIndex(
+        nodes,
         storage_context=storage_context,
         embed_model=embed_model,
         show_progress=True
