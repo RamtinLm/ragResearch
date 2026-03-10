@@ -28,7 +28,8 @@ def load_query_engine():
     llm = Ollama(
         model=llm_model_name,
         base_url=ollama_url,
-        request_timeout=120.0
+        request_timeout=120.0,
+        context_window=2048
     )
 
     index = VectorStoreIndex.from_vector_store(
