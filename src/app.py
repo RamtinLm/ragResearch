@@ -6,6 +6,7 @@ from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.llms.ollama import Ollama
+from compliance import check_compliance
 
 load_dotenv()
 
@@ -20,15 +21,14 @@ def load_query_engine():
     chroma_client = chromadb.HttpClient(host=chroma_host, port=chroma_port)
     chroma_collection = chroma_client.get_or_create_collection(collection_name)
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-
     embed_model = OllamaEmbedding(model_name=embed_model_name, base_url=ollama_url)
     llm = Ollama(model=llm_model_name, base_url=ollama_url, request_timeout=120.0, context_window=2048)
-
     index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model)
     return index.as_query_engine(llm=llm, similarity_top_k=5)
 
 
 query_engine = load_query_engine()
+
 
 def ask(question):
     if not question.strip():
@@ -41,19 +41,31 @@ def ask(question):
     return str(response), sources
 
 
+def run_compliance_check(pdf_file, progress=gr.Progress()):
+    if pdf_file is None:
+        return "Please upload a SOP PDF file."
+    return check_compliance(pdf_file.name, progress=progress)
+
+
 with gr.Blocks(title="Policy Compliance Assistant") as demo:
     gr.Markdown("# 🍁 Policy Compliance Assistant")
-    gr.Markdown("Ask questions about the **Safe Food for Canadians Regulations**. All processing is local — no data leaves this machine.")
 
-    with gr.Row():
-        question = gr.Textbox(label="Your Question", placeholder="e.g. What activities require a licence?", scale=4)
-        submit = gr.Button("Ask", variant="primary", scale=1)
+    with gr.Tab("Q&A"):
+        gr.Markdown("Ask questions about the **Safe Food for Canadians Regulations**.")
+        with gr.Row():
+            question = gr.Textbox(label="Your Question", placeholder="e.g. What activities require a licence?", scale=4)
+            submit = gr.Button("Ask", variant="primary", scale=1)
+        answer = gr.Textbox(label="Answer", lines=5)
+        sources = gr.Textbox(label="Sources", lines=4)
+        submit.click(fn=ask, inputs=question, outputs=[answer, sources])
+        question.submit(fn=ask, inputs=question, outputs=[answer, sources])
 
-    answer = gr.Textbox(label="Answer", lines=5)
-    sources = gr.Textbox(label="Sources", lines=4)
-
-    submit.click(fn=ask, inputs=question, outputs=[answer, sources])
-    question.submit(fn=ask, inputs=question, outputs=[answer, sources])
+    with gr.Tab("SOP Compliance Check"):
+        gr.Markdown("Upload your SOP PDF to check it against the indexed food regulations.")
+        pdf_input = gr.File(label="Upload SOP PDF", file_types=[".pdf"])
+        check_btn = gr.Button("Run Compliance Check", variant="primary")
+        report_output = gr.Textbox(label="Compliance Report", lines=20)
+        check_btn.click(fn=run_compliance_check, inputs=pdf_input, outputs=report_output)
 
 
 if __name__ == "__main__":
