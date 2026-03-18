@@ -72,25 +72,27 @@ def check_compliance(pdf_path, progress=None):
 
         sop_page = chunk.metadata.get("sop_page", "?")
 
-        prompt = f"""You are a food safety compliance auditor.
+        prompt = f"""You are a strict food safety compliance auditor checking a company SOP against Canadian food safety regulations.
 
-Below is a section from a company SOP (Standard Operating Procedure) and relevant sections from the Safe Food for Canadians Regulations.
-
-SOP SECTION (from page {sop_page} of the uploaded document):
+SOP SECTION (page {sop_page}):
 {chunk.text}
 
-RELEVANT POLICY SECTIONS:
+RELEVANT CANADIAN POLICY SECTIONS:
 {policy_context}
 
-Does the SOP section comply with the policy? 
-- If YES: reply only with "COMPLIANT"
-- If NO: reply with "NON-COMPLIANT" followed by a single clear sentence explaining what the conflict is and which policy section it violates.
-- If UNCLEAR or NOT RELATED: reply only with "NOT APPLICABLE"
+Your job: Does this SOP section conflict with or fall short of the Canadian policy?
+
+Rules:
+- If the SOP describes a procedure that CONTRADICTS or is WEAKER than what the policy requires, reply with "NON-COMPLIANT: " followed by one sentence naming exactly what the SOP says vs what the policy requires.
+- If the SOP section is about a topic the policy also covers and they AGREE, reply only with "COMPLIANT"
+- ONLY reply "NOT APPLICABLE" if the SOP section is about something completely unrelated to food safety (e.g. company address, copyright notice, table of contents)
+- Be strict. A weaker standard (e.g. longer time limits, optional steps, missing requirements) counts as NON-COMPLIANT.
+- Do not give benefit of the doubt. If the SOP is vague where the policy is specific, that is NON-COMPLIANT.
 """
 
         response = llm.complete(prompt)
         result = str(response).strip()
-
+        
         if result.startswith("NON-COMPLIANT"):
             issues.append({
                 "sop_page": sop_page,
