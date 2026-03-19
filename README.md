@@ -4,8 +4,9 @@ A fully local AI assistant that checks food company SOPs against Government of C
 
 ## What It Does
 
-- **Phase 1 (current):** Answers natural language questions about indexed food policy documents
-- **Phase 2 (in progress):** Accepts a user-uploaded SOP PDF and generates a structured compliance gap report, citing specific pages from both the SOP and the regulation where conflicts exist
+- **Phase 1:** Answers natural language questions about indexed food policy documents with source citations
+- **Phase 2:** Accepts a user-uploaded SOP PDF and generates a structured compliance gap report, flagging sections that conflict with or fall short of the indexed regulations
+
 
 ## Tech Stack
 
@@ -62,11 +63,14 @@ Open `http://127.0.0.1:7860` in your browser.
 - [x] Ingestion pipeline — PDF → chunks → vectors → ChromaDB
 - [x] Query pipeline — question → retrieval → LLM answer
 - [x] Gradio demo UI
-- [ ] SOP upload + compliance gap analysis (in progress)
+- [x] SOP upload + compliance gap analysis
 - [ ] RAGAS evaluation
+- [ ] CHANGELOG and ADR documentation
 
 ## Notes
 
 - Python 3.11 required (3.14 incompatible with ChromaDB)
-- Docker memory limit: 10GB recommended on 16GB machines
-- Re-ingestion wipes the collection first to avoid duplicates
+- Docker Desktop memory limit: 10GB recommended on 16GB machines
+- Re-ingest after every fresh Docker start: `python3 src/ingest.py`
+- SOP uploads are processed ephemerally — never stored in the vector database
+- LLM model: Llama 3.2 3B (downgraded from 8B due to RAM constraints on local hardware)
