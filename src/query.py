@@ -12,7 +12,7 @@ def load_query_engine():
     collection_name = os.getenv("COLLECTION_NAME", "policy_docs")
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     embed_model_name = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-    llm_model_name = os.getenv("OLLAMA_LLM_MODEL", "llama3.1:8b")
+    llm_model_name = os.getenv("OLLAMA_LLM_MODEL", "llama3.2:3b")
     chroma_host = os.getenv("CHROMA_HOST", "localhost")
     chroma_port = int(os.getenv("CHROMA_PORT", "8000"))
 
@@ -42,11 +42,11 @@ def load_query_engine():
 
 
 def ask(question: str):
-    print(f"\n🔍 Question: {question}")
+    print(f"\nQuestion: {question}")
     query_engine = load_query_engine()
     response = query_engine.query(question)
-    print(f"\n📋 Answer:\n{response}")
-    print(f"\n📎 Sources:")
+    print(f"\nAnswer:\n{response}")
+    print(f"\nSources:")
     for node in response.source_nodes:
         print(f"  - Score: {node.score:.3f} | {node.metadata.get('file_name', 'unknown')}")
     return response
